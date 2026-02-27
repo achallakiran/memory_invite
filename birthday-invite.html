@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kaustubh's 4th Birthday! 🎂</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700;800&family=Baloo+2:wght@800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #060618;
+  --secondary: #FFE66D;
+  --accent: #4ECDC4;
+  --purple: #C77DFF;
+  --red: #FF6B6B;
+  --green: #95D44A;
+  --blue: #74B3FF;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Nunito', sans-serif;
+  background: var(--bg);
+  min-height: 100vh;
+  overflow-x: hidden;
+  color: white;
+}
+
+/* STARFIELD */
+#starfield { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+.bg-star {
+  position: absolute; border-radius: 50%; background: white;
+  animation: twinkle var(--d) ease-in-out infinite alternate;
+}
+@keyframes twinkle {
+  from { opacity: 0.04; transform: scale(0.7); }
+  to   { opacity: 0.85; transform: scale(1.3); }
+}
+.floater {
+  position: fixed; pointer-events: none; z-index: 0; opacity: 0.4;
+  animation: floatUp var(--fd) ease-in-out infinite alternate;
+}
+@keyframes floatUp {
+  from { transform: translateY(0) rotate(-8deg); }
+  to   { transform: translateY(-26px) rotate(10deg); }
+}
+
+/* INTRO */
+#intro {
+  position: fixed; inset: 0; z-index: 200;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: radial-gradient(ellipse at 50% 38%, #131350 0%, #060618 72%);
+  text-align: center; padding: 1.5rem;
+  transition: opacity 0.8s, visibility 0.8s;
+}
+#intro.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+
+.envelope {
+  font-size: 5rem; cursor: pointer; margin-bottom: 1rem;
+  filter: drop-shadow(0 0 22px rgba(255,230,109,0.7));
+  animation: envBounce 1.2s ease-in-out infinite alternate;
+}
+.envelope:hover { transform: scale(1.15) rotate(-6deg); }
+@keyframes envBounce {
+  from { transform: translateY(0); }
+  to   { transform: translateY(-14px) rotate(3deg); }
+}
+.intro-title {
+  font-family: 'Baloo 2', cursive;
+  font-size: clamp(2rem, 6vw, 3.5rem);
+  line-height: 1.1; margin-bottom: 0.4rem;
+  background: linear-gradient(135deg, #FF6B6B 0%, #FFE66D 35%, #4ECDC4 65%, #C77DFF 100%);
+  background-size: 200%;
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  animation: shimmer 3s linear infinite;
+}
+@keyframes shimmer { 0%{background-position:0%} 100%{background-position:200%} }
+.intro-sub { font-size: clamp(0.9rem, 2.5vw, 1.2rem); color: #8888aa; margin-bottom: 1.5rem; }
+.intro-card {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(199,125,255,0.22);
+  border-radius: 1.4rem; padding: 1.2rem 2rem;
+  margin-bottom: 1.8rem; max-width: 380px; width: 100%;
+}
+.intro-card p { font-size: clamp(0.85rem, 2vw, 1rem); margin: 0.35rem 0; color: #ccc; }
+.intro-card strong { color: var(--secondary); }
+.intro-card .venue { font-family: 'Fredoka One', cursive; font-size: 1.05rem; color: var(--accent); }
+.play-btn {
+  background: linear-gradient(135deg, #FF6B6B, #C77DFF);
+  border: none; border-radius: 50px; padding: 0.9rem 2.8rem;
+  font-family: 'Fredoka One', cursive; font-size: 1.4rem; color: white;
+  cursor: pointer; box-shadow: 0 8px 32px rgba(199,125,255,0.4);
+  transition: transform 0.2s;
+  animation: pulseShadow 2s ease-in-out infinite;
+}
+.play-btn:hover { transform: scale(1.08); }
+@keyframes pulseShadow {
+  0%,100% { box-shadow: 0 8px 32px rgba(199,125,255,0.4); }
+  50%      { box-shadow: 0 8px 48px rgba(255,107,107,0.6); }
+}
+
+/* GAME */
+#game {
+  position: relative; z-index: 1;
+  min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+  padding: 0.7rem 0.7rem 2rem;
+  opacity: 0; pointer-events: none; transition: opacity 0.7s;
+}
+#game.active { opacity: 1; pointer-events: all; }
+
+/* HEADER */
+.game-header { width: 100%; max-width: 740px; text-align: center; margin-bottom: 0.5rem; }
+.header-row {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.3rem;
+}
+.game-title {
+  font-family: 'Baloo 2', cursive;
+  font-size: clamp(1.3rem, 4vw, 2.2rem);
+  background: linear-gradient(135deg, #FF6B6B, #FFE66D);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+#music-btn {
+  background: rgba(255,255,255,0.06);
+  border: 1.5px solid rgba(255,255,255,0.18);
+  border-radius: 50px; padding: 0.3rem 0.85rem;
+  font-family: 'Fredoka One', cursive; font-size: 0.78rem; color: #999;
+  cursor: pointer; transition: all 0.3s; flex-shrink: 0; margin-left: 0.7rem;
+}
+#music-btn:hover { background: rgba(255,255,255,0.12); color: white; }
+#music-btn.on { border-color: var(--accent); color: var(--accent); background: rgba(78,205,196,0.1); }
+
+.mode-selector {
+  display: flex; gap: 0.45rem; justify-content: center; margin: 0.45rem 0; flex-wrap: wrap;
+}
+.mode-btn {
+  padding: 0.35rem 1.2rem; border-radius: 50px;
+  border: 2px solid rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.04);
+  color: #aaa; font-family: 'Fredoka One', cursive; font-size: 0.9rem;
+  cursor: pointer; transition: all 0.3s;
+}
+.mode-btn.active, .mode-btn:hover {
+  border-color: var(--accent); background: rgba(78,205,196,0.13); color: var(--accent);
+  transform: scale(1.05);
+}
+.progress-bar { display: flex; gap: 0.4rem; justify-content: center; margin: 0.35rem 0; flex-wrap: wrap; }
+.msg-badge {
+  padding: 0.22rem 0.85rem; border-radius: 50px;
+  font-family: 'Fredoka One', cursive; font-size: 0.78rem;
+  border: 2px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.03); color: #555;
+  transition: all 0.4s;
+}
+.msg-badge.found { border-color: var(--green); background: rgba(149,212,74,0.12); color: var(--green); }
+.msg-badge.current {
+  border-color: var(--secondary); background: rgba(255,230,109,0.1); color: var(--secondary);
+  animation: badgePulse 1.8s ease-in-out infinite;
+}
+@keyframes badgePulse {
+  0%,100% { box-shadow: 0 0 5px rgba(255,230,109,0.25); }
+  50%      { box-shadow: 0 0 16px rgba(255,230,109,0.65); }
+}
+.stats {
+  display: flex; gap: 1.2rem; justify-content: center;
+  font-family: 'Fredoka One', cursive; font-size: 0.88rem; color: #555;
+  margin-bottom: 0.3rem;
+}
+.stats span { color: #ddd; }
+
+/* GRID */
+#grid {
+  display: grid; gap: 9px; width: 100%; max-width: 740px;
+  justify-content: center; justify-items: center; align-content: start;
+  margin: 0 auto;
+}
+
+/* ======= CARD ======= */
+.card { perspective: 900px; cursor: pointer; }
+.card-inner {
+  position: relative; width: 100%; height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.52s cubic-bezier(0.23, 1, 0.32, 1);
+  border-radius: 13px;
+}
+.card.flipped .card-inner,
+.card.matched .card-inner { transform: rotateY(180deg); }
+
+.card-face {
+  position: absolute; inset: 0; border-radius: 13px;
+  display: flex; align-items: center; justify-content: center;
+  backface-visibility: hidden; -webkit-backface-visibility: hidden;
+  overflow: hidden;
+}
+
+/* ---- CARD BACK: deep navy + golden star ---- */
+.card-back {
+  background: linear-gradient(145deg, #08082e 0%, #0d0d3d 60%, #060620 100%);
+  border: 2px solid #1c1c5a;
+  box-shadow: 0 5px 20px rgba(0,0,0,0.7), inset 0 0 20px rgba(10,10,60,0.5);
+}
+/* dot-grid texture */
+.card-back::before {
+  content: '';
+  position: absolute; inset: 0; z-index: 1;
+  background-image: radial-gradient(circle, rgba(255,230,109,0.07) 1px, transparent 1px);
+  background-size: 7px 7px;
+  pointer-events: none;
+}
+/* Corner accent dots */
+.card-back::after {
+  content: '✦';
+  position: absolute; bottom: 5px; right: 6px; z-index: 2;
+  font-size: 0.45rem; color: rgba(255,230,109,0.25); pointer-events: none;
+}
+.cb-star-wrap {
+  position: relative; z-index: 3;
+  display: flex; align-items: center; justify-content: center;
+  width: 100%; height: 100%;
+}
+.cb-star-svg {
+  width: 52%; height: 52%;
+  animation: starGlow 2.8s ease-in-out infinite alternate;
+  filter: drop-shadow(0 0 6px rgba(255,230,109,0.6));
+}
+@keyframes starGlow {
+  from { filter: drop-shadow(0 0 4px rgba(255,230,109,0.4)); opacity: 0.85; }
+  to   { filter: drop-shadow(0 0 14px rgba(255,230,109,1));  opacity: 1; }
+}
+/* Tiny corner star top-left */
+.cb-corner {
+  position: absolute; top: 5px; left: 6px; z-index: 3;
+  font-size: 0.5rem; color: rgba(255,230,109,0.22);
+}
+
+/* The letter shown on the back after level complete */
+.cb-letter {
+  position: absolute; inset: 0; z-index: 10;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Fredoka One', cursive;
+  font-size: clamp(1.1rem, 4vw, 1.9rem);
+  color: #FFE66D;
+  text-shadow: 0 0 12px rgba(255,230,109,0.9), 0 0 4px rgba(255,200,0,0.5);
+  background: linear-gradient(145deg, #08082e 0%, #0d0d3d 60%, #060620 100%);
+  border-radius: 13px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.45s ease;
+}
+.cb-letter.show { opacity: 1; }
+/* hide star when letter shown */
+.card.revealing .cb-star-wrap { opacity: 0; transition: opacity 0.25s; }
+.card.revealing .card-back::before { opacity: 0; transition: opacity 0.25s; }
+
+/* ---- CARD FRONT: bright vivid colour ---- */
+.card-front {
+  transform: rotateY(180deg);
+  flex-direction: column; gap: 2px; padding: 4px;
+  border: 2px solid rgba(255,255,255,0.18);
+  box-shadow: 0 6px 22px rgba(0,0,0,0.5);
+}
+.front-emoji { font-size: clamp(1.3rem, 3vw, 2rem); line-height: 1; }
+.front-letter {
+  font-family: 'Fredoka One', cursive;
+  font-size: clamp(1.5rem, 4.5vw, 2.6rem);
+  color: rgba(255,255,255,0.95);
+  text-shadow: 0 2px 6px rgba(0,0,0,0.35);
+  line-height: 1;
+}
+/* Colour themes */
+.ct0 .card-front { background: linear-gradient(145deg,#FF6B6B,#ff3d3d); }
+.ct1 .card-front { background: linear-gradient(145deg,#4ECDC4,#18b0a6); }
+.ct2 .card-front { background: linear-gradient(145deg,#C77DFF,#9b33f5); }
+.ct3 .card-front { background: linear-gradient(145deg,#FFD93D,#f0a500); }
+.ct4 .card-front { background: linear-gradient(145deg,#74B3FF,#3d7ee0); }
+.ct5 .card-front { background: linear-gradient(145deg,#95D44A,#4ab81a); }
+.ct6 .card-front { background: linear-gradient(145deg,#FF9F43,#e05c00); }
+.ct7 .card-front { background: linear-gradient(145deg,#fd79a8,#cc1f5a); }
+
+.card.matched .card-front { animation: matchPop 0.33s ease; }
+@keyframes matchPop {
+  0%   { transform: rotateY(180deg) scale(1); }
+  50%  { transform: rotateY(180deg) scale(1.13); }
+  100% { transform: rotateY(180deg) scale(1); }
+}
+
+/* SECRET OVERLAY */
+#secret-overlay {
+  position: fixed; inset: 0; z-index: 300;
+  background: rgba(5,5,20,0.93);
+  backdrop-filter: blur(14px);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity 0.5s;
+}
+#secret-overlay.show { opacity: 1; pointer-events: all; }
+.secret-box {
+  background: linear-gradient(135deg, rgba(10,10,44,0.95), rgba(18,8,46,0.95));
+  border: 1.5px solid rgba(199,125,255,0.35);
+  border-radius: 2rem; padding: 2.3rem 2.4rem 1.8rem;
+  max-width: 460px; width: 90%; text-align: center;
+  transform: scale(0.7);
+  transition: transform 0.5s cubic-bezier(0.23, 1, 0.32, 1) 0.15s;
+  box-shadow: 0 0 60px rgba(199,125,255,0.12);
+  position: relative; overflow: hidden;
+}
+#secret-overlay.show .secret-box { transform: scale(1); }
+.secret-box::before {
+  content: ''; position: absolute; inset: -100%; pointer-events: none;
+  background: conic-gradient(from 0deg, transparent 0%, rgba(199,125,255,0.03) 50%, transparent 100%);
+  animation: spin 8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.secret-trophy { font-size: 3.2rem; margin-bottom: 0.4rem; display: block; animation: trophyRock 2s ease-in-out infinite alternate; }
+@keyframes trophyRock { from{transform:rotate(-8deg)} to{transform:rotate(8deg) scale(1.08)} }
+.secret-title { font-family:'Baloo 2',cursive; font-size:1.6rem; color:var(--secondary); margin-bottom:0.25rem; text-shadow:0 0 20px rgba(255,230,109,0.4); }
+.secret-sub { font-size:0.82rem; color:#666; margin-bottom:0.6rem; }
+.secret-hint { font-size:0.78rem; color:#555; margin-bottom:0.8rem; font-style:italic; }
+.secret-msg {
+  font-family:'Fredoka One',cursive;
+  font-size:clamp(1.1rem,3.5vw,1.6rem);
+  background: linear-gradient(135deg,#FF6B6B,#FFE66D,#4ECDC4);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+  line-height:1.5; margin-bottom:1.4rem;
+  position:relative; z-index:1; letter-spacing:0.04em;
+}
+.secret-close {
+  background: linear-gradient(135deg,#FF6B6B,#C77DFF);
+  border:none; border-radius:50px; padding:0.6rem 1.9rem;
+  font-family:'Fredoka One',cursive; font-size:1rem; color:white;
+  cursor:pointer; position:relative; z-index:1;
+  transition:transform 0.2s;
+  box-shadow:0 6px 22px rgba(255,107,107,0.35);
+}
+.secret-close:hover { transform:scale(1.08); }
+
+/* WIN OVERLAY */
+#win-overlay {
+  position: fixed; inset: 0; z-index: 400;
+  background: rgba(5,5,20,0.96); backdrop-filter: blur(16px);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity 0.7s;
+}
+#win-overlay.show { opacity: 1; pointer-events: all; }
+.win-box {
+  max-width: 520px; width: 92%; text-align: center;
+  transform: scale(0.5);
+  transition: transform 0.7s cubic-bezier(0.23,1,0.32,1) 0.3s;
+}
+#win-overlay.show .win-box { transform: scale(1); }
+.win-emojis { font-size: 2.4rem; margin-bottom: 0.6rem; }
+.win-title {
+  font-family:'Baloo 2',cursive; font-size:clamp(2rem,6.5vw,3.3rem);
+  background:linear-gradient(135deg,#FF6B6B,#FFE66D,#4ECDC4,#C77DFF,#FF6B6B);
+  background-size:200%; -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+  animation:shimmer 2.5s linear infinite; margin-bottom:0.25rem;
+}
+.win-invite {
+  background:rgba(255,255,255,0.04);
+  border:1px solid rgba(116,179,255,0.18);
+  border-radius:1.4rem; padding:1.2rem 1.7rem;
+  margin:1.1rem 0;
+}
+.win-invite p { font-size:clamp(0.83rem,1.9vw,0.98rem); margin:0.28rem 0; color:#ccc; }
+.win-invite strong { color:var(--secondary); }
+.win-invite .vline { font-family:'Fredoka One',cursive; font-size:1rem; color:var(--accent); }
+.win-restart {
+  background:linear-gradient(135deg,#4ECDC4,#74B3FF);
+  border:none; border-radius:50px; padding:0.7rem 2.2rem;
+  font-family:'Fredoka One',cursive; font-size:1.15rem; color:white;
+  cursor:pointer; transition:transform 0.2s;
+  box-shadow:0 6px 22px rgba(78,205,196,0.38);
+}
+.win-restart:hover { transform:scale(1.08); }
+
+/* CONFETTI */
+.conf {
+  position:fixed; border-radius:2px; pointer-events:none; z-index:500;
+  animation:confFall var(--d) ease-in forwards;
+}
+@keyframes confFall {
+  0%   { transform:translateY(-10px) rotate(0deg); opacity:1; }
+  100% { transform:translateY(105vh) rotate(750deg); opacity:0; }
+}
+</style>
+</head>
+<body>
+
+<div id="starfield"></div>
+
+<!-- INTRO -->
+<div id="intro">
+  <div class="envelope" onclick="startGame()">💌</div>
+  <h1 class="intro-title">Kaustubh Turns 4! 🎂</h1>
+  <p class="intro-sub">Match the cards — uncover the secret birthday messages!</p>
+  <div class="intro-card">
+    <p>📅 <strong>Saturday, 1st March 2025</strong></p>
+    <p>⏰ <strong>5:00 PM Onwards</strong></p>
+    <p class="venue">📍 Brigade Cornerstone Utopia Clubhouse</p>
+    <p style="margin-top:0.5rem;color:#666;font-size:0.82rem;">Tap the envelope to play!</p>
+  </div>
+  <button class="play-btn" onclick="startGame()">🎮 Play to Unlock!</button>
+</div>
+
+<!-- GAME -->
+<div id="game">
+  <div class="game-header">
+    <div class="header-row">
+      <h1 class="game-title">🎂 Kaustubh's Memory Quest!</h1>
+      <button id="music-btn" onclick="toggleMusic()">🔇 Music</button>
+    </div>
+    <div class="mode-selector">
+      <button class="mode-btn active" id="btn-easy"   onclick="setMode('easy')">🌟 Easy</button>
+      <button class="mode-btn"        id="btn-medium" onclick="setMode('medium')">⚡ Medium</button>
+      <button class="mode-btn"        id="btn-hard"   onclick="setMode('hard')">🔥 Hard</button>
+    </div>
+    <div class="progress-bar" id="progress-bar"></div>
+    <div class="stats">
+      Moves: <span id="moves">0</span> &nbsp;|&nbsp;
+      Pairs: <span id="pairs">0</span>/<span id="total-pairs">0</span> &nbsp;|&nbsp;
+      Msg: <span id="msg-num">1</span>/3
+    </div>
+  </div>
+  <div id="grid"></div>
+</div>
+
+<!-- SECRET OVERLAY -->
+<div id="secret-overlay">
+  <div class="secret-box">
+    <span class="secret-trophy">🏆</span>
+    <div class="secret-title">Message Unlocked!</div>
+    <div class="secret-sub" id="secret-sub">Secret Message 1 of 3</div>
+    <div class="secret-hint">The cards flipped to show the letters — read the message below!</div>
+    <div class="secret-msg" id="secret-msg-text"></div>
+    <button class="secret-close" id="secret-close-btn" onclick="closeSecret()">✨ Next Level!</button>
+  </div>
+</div>
+
+<!-- WIN OVERLAY -->
+<div id="win-overlay">
+  <div class="win-box">
+    <div class="win-emojis">🎉🎊🎂🎈🎊🎉</div>
+    <div class="win-title">You Did It!</div>
+    <p style="color:#666;font-size:0.92rem;margin-bottom:0.3rem;">All 3 secret messages unlocked! 🗝️</p>
+    <div class="win-invite">
+      <p style="font-family:'Baloo 2',cursive;font-size:1.25rem;color:var(--accent);">🎂 You're Invited! 🎂</p>
+      <p>Come celebrate</p>
+      <p><strong>Kaustubh's 4th Birthday!</strong></p>
+      <p style="margin-top:0.5rem">📅 <strong>Saturday, 1st March 2025</strong></p>
+      <p>⏰ <strong>5:00 PM Onwards</strong></p>
+      <p class="vline">📍 Brigade Cornerstone Utopia Clubhouse</p>
+      <p style="margin-top:0.6rem;color:var(--purple);font-style:italic;">Cake • Play • Memories • Joy! 🎈</p>
+    </div>
+    <button class="win-restart" onclick="fullRestart()">🔄 Play Again!</button>
+  </div>
+</div>
+
+<script>
+// ── STARFIELD ──────────────────────────────────
+(function(){
+  const sf=document.getElementById('starfield');
+  for(let i=0;i<90;i++){
+    const s=document.createElement('div'); s.className='bg-star';
+    const sz=Math.random()*2.2+0.5;
+    s.style.cssText=`width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*100}%;--d:${1+Math.random()*3}s;animation-delay:${Math.random()*4}s`;
+    sf.appendChild(s);
+  }
+  ['🎈','🎁','⭐','🌟','🎀','🦋','🍭','🎠','✨','💫','🌈','🎊'].forEach((ic,i)=>{
+    const f=document.createElement('div'); f.className='floater';
+    f.textContent=ic; f.style.fontSize=clamp(1.4,2,2.2)+'rem';
+    f.style.cssText+=`left:${Math.random()*88}%;top:${Math.random()*85}%;--fd:${3+Math.random()*4}s;animation-delay:${Math.random()*3}s;font-size:${1.4+Math.random()*0.8}rem`;
+    sf.appendChild(f);
+  });
+  function clamp(mn,v,mx){return Math.min(mx,Math.max(mn,v));}
+})();
+
+// ── AUDIO ──────────────────────────────────────
+let audioCtx=null,musicOn=false,loopTO=null,musicOscs=[];
+function actx(){
+  if(!audioCtx) audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+  return audioCtx;
+}
+function tone(freq,start,dur,vol=0.11,type='triangle'){
+  const ctx=actx();
+  const o=ctx.createOscillator(),g=ctx.createGain();
+  o.connect(g); g.connect(ctx.destination);
+  o.type=type; o.frequency.setValueAtTime(freq,ctx.currentTime+start);
+  g.gain.setValueAtTime(0,ctx.currentTime+start);
+  g.gain.linearRampToValueAtTime(vol,ctx.currentTime+start+0.04);
+  g.gain.setValueAtTime(vol,ctx.currentTime+start+dur-0.04);
+  g.gain.linearRampToValueAtTime(0,ctx.currentTime+start+dur);
+  o.start(ctx.currentTime+start); o.stop(ctx.currentTime+start+dur);
+  musicOscs.push(o); return o;
+}
+const TUNE=[
+  [261,0,0.28],[261,0.3,0.07],[293,0.4,0.36],[261,0.82,0.36],[349,1.24,0.36],[330,1.66,0.76],
+  [261,2.6,0.28],[261,2.9,0.07],[293,3.0,0.36],[261,3.42,0.36],[392,3.86,0.36],[349,4.3,0.76],
+  [261,5.2,0.28],[261,5.5,0.07],[523,5.6,0.36],[440,6.02,0.36],[349,6.46,0.36],[330,6.9,0.36],[293,7.34,0.76],
+  [466,8.22,0.28],[466,8.52,0.07],[440,8.62,0.36],[349,9.06,0.36],[392,9.5,0.36],[349,9.94,1.0]
+];
+function playLoop(){
+  if(!musicOn) return;
+  const ctx=actx(); if(ctx.state==='suspended') ctx.resume();
+  TUNE.forEach(([f,s,d])=>tone(f,s,d,0.09,'triangle'));
+  [[130,0,0.9],[130,2.6,0.76],[130,5.2,0.76],[174,6.02,0.76],[130,8.22,0.76],[174,9.94,0.9]].forEach(([f,s,d])=>tone(f,s,d,0.045,'sine'));
+  loopTO=setTimeout(()=>{musicOscs=[];playLoop();},11500);
+}
+function stopMusic(){clearTimeout(loopTO);musicOscs.forEach(o=>{try{o.stop()}catch(e){}});musicOscs=[];}
+function toggleMusic(){
+  musicOn=!musicOn;
+  const b=document.getElementById('music-btn');
+  if(musicOn){b.textContent='🎵 Music';b.classList.add('on');actx().resume().then(()=>playLoop());}
+  else{b.textContent='🔇 Music';b.classList.remove('on');stopMusic();}
+}
+function sfxFlip(){tone(720,0,0.1,0.06,'sine');tone(1020,0.05,0.09,0.04,'sine');}
+function sfxMatch(){[523,659,784,1047].forEach((f,i)=>tone(f,i*0.07,0.18,0.12,'triangle'));}
+function sfxNoMatch(){tone(220,0,0.1,0.05,'sawtooth');tone(160,0.1,0.14,0.04,'sawtooth');}
+function sfxWin(){[523,659,784,880,1047,1319].forEach((f,i)=>tone(f,i*0.09,0.23,0.11,'triangle'));}
+function sfxFanfare(){[523,659,784,1047,784,1047,1319,1047,1319,1568].forEach((f,i)=>tone(f,i*0.1,0.2,0.11,'triangle'));}
+
+// ── GAME DATA ──────────────────────────────────
+// Each message text: one letter → one card pair
+// Easy   (8 pairs  = 16 cards, 4 cols × 4 rows)
+// Medium (12 pairs = 24 cards, 6 cols × 4 rows)
+// Hard   (16 pairs = 32 cards, 6 cols + partial, ~6 cols)
+
+// We strip spaces so the cards only show letters; spaces shown as space char but card stays blank-ish
+// Actually we include spaces — card front shows ' ' visually as a small icon
+const MODES={
+  easy:{
+    cols:4,
+    // 8 chars each (no spaces counted – spaces replaced by • visual)
+    messages:[
+      {text:'HAPPY 4TH', emojis:['🎂','🥳','🎉','🎈','⭐','🎁','🎊','🌟','🎯']},
+      {text:'BORN 2 WIN', emojis:['🏆','🌟','🎯','💪','🔥','⭐','🎀','🥳','🎉']},
+      {text:'LOVE U KAI', emojis:['❤️','💖','🌈','✨','💫','🎊','🎁','🦋','🌸']}
+    ]
+  },
+  medium:{
+    cols:6,
+    // 12 chars each
+    messages:[
+      {text:'KAUSTUBH ROCKS', emojis:['🎂','⭐','🦁','🚀','🎊','🌟','🎈','🥳','✨','🎯','💥','🏆','🎁','💫']},
+      {text:'YOU TURN 4 YAY', emojis:['🎂','🔢','🎀','📅','🥳','🎉','⭐','🌟','🎈','🎁','🎊','✨','💖','🦋']},
+      {text:'PARTY ON 1 MAR', emojis:['🎉','🎪','🎡','📅','🗓️','🎂','🥳','🎈','🌟','⭐','🎁','🎊','✨','💫']}
+    ]
+  },
+  hard:{
+    cols:6,
+    // 16 chars each
+    messages:[
+      {text:'HAPPY BIRTHDAY KAI', emojis:['🎂','🥳','🎉','🎈','⭐','🎁','🎊','🌟','🦋','💖','✨','💫','🎯','🏆','🎪','🌈','🎠','🎡']},
+      {text:'OUR LITTLE HERO 4U', emojis:['🏅','🦁','💪','☀️','😁','✨','🎵','😄','🎊','🌟','⭐','🎁','💫','🎯','🏆','🎠','🌈','🦋']},
+      {text:'MARCH 1 5PM UTOPIA', emojis:['📅','🗓️','🕔','📍','🎂','🥳','🎉','🎈','🌟','⭐','🎁','🎊','✨','💫','🏢','🎡','🎪','🎠']}
+    ]
+  }
+};
+
+// ── STATE ───────────────────────────────────────
+let currentMode='easy',currentMsgIdx=0,foundMessages=[];
+let flipped=[],matched=[],moves=0,canFlip=true;
+
+// ── INIT ────────────────────────────────────────
+function startGame(){
+  document.getElementById('intro').classList.add('hidden');
+  document.getElementById('game').classList.add('active');
+  currentMode='easy'; currentMsgIdx=0; foundMessages=[];
+  buildProgressBar(); buildGrid();
+}
+
+function setMode(m){
+  currentMode=m;
+  document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('btn-'+m).classList.add('active');
+  currentMsgIdx=0; foundMessages=[];
+  buildProgressBar(); buildGrid();
+}
+
+function buildProgressBar(){
+  const pb=document.getElementById('progress-bar'); pb.innerHTML='';
+  for(let i=0;i<3;i++){
+    const b=document.createElement('div');
+    if(i<foundMessages.length){b.className='msg-badge found';b.textContent='✅ Msg '+(i+1);}
+    else if(i===currentMsgIdx){b.className='msg-badge current';b.textContent='🔓 Msg '+(i+1);}
+    else{b.className='msg-badge';b.textContent='🔒 Msg '+(i+1);}
+    b.id='badge-'+i; pb.appendChild(b);
+  }
+}
+
+// ── BUILD GRID ──────────────────────────────────
+function buildGrid(){
+  const mode=MODES[currentMode];
+  const msgData=mode.messages[currentMsgIdx];
+  const letters=[...msgData.text]; // includes spaces
+  const pairs=letters.length;
+
+  // Build card pairs array
+  const cardData=[];
+  for(let i=0;i<pairs;i++){
+    const emoji=msgData.emojis[i%msgData.emojis.length];
+    const letter=letters[i];
+    const ct='ct'+(i%8);
+    cardData.push({pair:i,emoji,letter,ct});
+    cardData.push({pair:i,emoji,letter,ct});
+  }
+  shuffle(cardData);
+
+  const cols=mode.cols;
+  const maxW=Math.min(window.innerWidth-20,740);
+  const gap=9;
+  const cardW=Math.floor((maxW-gap*(cols-1))/cols);
+  const cardH=Math.floor(cardW*1.32);
+
+  const grid=document.getElementById('grid');
+  grid.innerHTML='';
+  grid.style.gridTemplateColumns=`repeat(${cols},${cardW}px)`;
+
+  flipped=[]; matched=[]; moves=0; canFlip=true;
+  updateStats(pairs);
+  document.getElementById('msg-num').textContent=currentMsgIdx+1;
+
+  // font size for front letter relative to card
+  const fls=Math.max(14,Math.min(36,cardW*0.42));
+  const ems=Math.max(12,Math.min(28,cardW*0.32));
+  const cbls=Math.max(12,Math.min(32,cardW*0.38)); // back letter size
+
+  cardData.forEach((data,idx)=>{
+    const card=document.createElement('div');
+    card.className=`card ${data.ct}`;
+    card.style.width=cardW+'px'; card.style.height=cardH+'px';
+    card.dataset.pair=String(data.pair);
+    card.dataset.letter=data.letter;
+
+    // Display char — space becomes a small dot on front
+    const displayLetter=data.letter===' '?'·':data.letter;
+
+    const starR=Math.round(cardW*0.22);
+
+    card.innerHTML=`
+      <div class="card-inner">
+        <div class="card-face card-back">
+          <div class="card-back::before"></div>
+          <span class="cb-corner">✦</span>
+          <div class="cb-star-wrap">
+            <svg class="cb-star-svg" viewBox="0 0 51 48" width="${starR*2}" height="${starR*2}">
+              <defs>
+                <radialGradient id="sg${idx}" cx="50%" cy="45%" r="55%">
+                  <stop offset="0%"   stop-color="#fff7a0"/>
+                  <stop offset="55%"  stop-color="#FFE66D"/>
+                  <stop offset="100%" stop-color="#c8900a"/>
+                </radialGradient>
+              </defs>
+              <path d="M25.5 3 L31.6 19.2 L49 19.2 L35.4 29.5 L40.6 45.7 L25.5 35.4 L10.4 45.7 L15.6 29.5 L2 19.2 L19.4 19.2 Z"
+                fill="url(#sg${idx})" stroke="#b37800" stroke-width="0.8"/>
+            </svg>
+          </div>
+          <div class="cb-letter" style="font-size:${cbls}px">${displayLetter}</div>
+        </div>
+        <div class="card-face card-front">
+          <div class="front-emoji" style="font-size:${ems}px">${data.emoji}</div>
+          <div class="front-letter" style="font-size:${fls}px">${displayLetter}</div>
+        </div>
+      </div>`;
+
+    card.addEventListener('click',()=>onCardClick(card));
+    grid.appendChild(card);
+  });
+}
+
+function shuffle(arr){
+  for(let i=arr.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]]=[arr[j],arr[i]];
+  }
+}
+
+function updateStats(tp){
+  document.getElementById('moves').textContent=moves;
+  document.getElementById('pairs').textContent=matched.length/2;
+  document.getElementById('total-pairs').textContent=tp!=null?tp:MODES[currentMode].messages[currentMsgIdx].text.length;
+}
+
+// ── CARD LOGIC ──────────────────────────────────
+function onCardClick(card){
+  if(!canFlip) return;
+  if(card.classList.contains('flipped')||card.classList.contains('matched')) return;
+  if(flipped.length>=2) return;
+
+  card.classList.add('flipped');
+  sfxFlip(); flipped.push(card);
+
+  if(flipped.length===2){
+    moves++;
+    canFlip=false;
+    const [a,b]=flipped;
+    if(a.dataset.pair===b.dataset.pair){
+      setTimeout(()=>{
+        a.classList.add('matched'); b.classList.add('matched');
+        sfxMatch(); matched.push(a,b); flipped=[]; canFlip=true;
+        const tp=MODES[currentMode].messages[currentMsgIdx].text.length;
+        updateStats(tp);
+        if(matched.length===tp*2) setTimeout(()=>flipAllBackReveal(),500);
+      },420);
+    } else {
+      setTimeout(()=>{
+        a.classList.remove('flipped'); b.classList.remove('flipped');
+        flipped=[]; canFlip=true; sfxNoMatch(); updateStats();
+      },900);
+    }
+    updateStats();
+  }
+}
+
+// ── FLIP BACK + REVEAL LETTERS ──────────────────
+function flipAllBackReveal(){
+  canFlip=false;
+  const allCards=[...document.querySelectorAll('.card')];
+
+  // Step 1: flip all to back (remove flipped/matched classes)
+  allCards.forEach((c,i)=>{
+    setTimeout(()=>{
+      c.classList.remove('flipped','matched');
+    }, i*30);
+  });
+
+  const afterFlip=allCards.length*30+300;
+
+  // Step 2: reveal letters on back one by one (sorted by pair = message order)
+  // Sort cards by pair index for sequential reveal
+  const sorted=[...allCards].sort((a,b)=>Number(a.dataset.pair)-Number(b.dataset.pair));
+
+  // We only want to animate ONE card per pair (first in sorted = first occurrence)
+  // But we'll reveal ALL — both duplicates light up at the same time
+  // Group by pair:
+  const byPair={};
+  allCards.forEach(c=>{
+    const p=c.dataset.pair;
+    if(!byPair[p]) byPair[p]=[];
+    byPair[p].push(c);
+  });
+
+  const pairKeys=Object.keys(byPair).map(Number).sort((a,b)=>a-b);
+
+  setTimeout(()=>{
+    pairKeys.forEach((pk,seqIdx)=>{
+      byPair[pk].forEach(c=>{
+        setTimeout(()=>{
+          // Hide star, show letter
+          c.classList.add('revealing');
+          const lEl=c.querySelector('.cb-letter');
+          if(lEl) lEl.classList.add('show');
+        }, seqIdx*80);
+      });
+    });
+
+    const revealDur=pairKeys.length*80+500;
+    setTimeout(()=>showSecret(), revealDur);
+  }, afterFlip);
+}
+
+// ── SECRET MESSAGE ──────────────────────────────
+function showSecret(){
+  const msgData=MODES[currentMode].messages[currentMsgIdx];
+  document.getElementById('secret-msg-text').textContent=msgData.text;
+  document.getElementById('secret-sub').textContent=`Secret Message ${currentMsgIdx+1} of 3 — Discovered! 🗝️`;
+
+  const btn=document.getElementById('secret-close-btn');
+  if(foundMessages.length+1>=3) btn.textContent='🎉 See Full Invitation!';
+  else btn.textContent=`🔓 Find Message ${currentMsgIdx+2}!`;
+
+  foundMessages.push(currentMsgIdx);
+  const badge=document.getElementById('badge-'+currentMsgIdx);
+  if(badge){badge.className='msg-badge found';badge.textContent='✅ Msg '+(currentMsgIdx+1);}
+
+  document.getElementById('secret-overlay').classList.add('show');
+  sfxWin(); spawnConfetti(65);
+}
+
+function closeSecret(){
+  document.getElementById('secret-overlay').classList.remove('show');
+  canFlip=true;
+  if(foundMessages.length>=3){ setTimeout(()=>showWin(),500); return; }
+  currentMsgIdx++;
+  buildProgressBar(); buildGrid();
+}
+
+function showWin(){
+  document.getElementById('win-overlay').classList.add('show');
+  spawnConfetti(130); sfxFanfare();
+}
+
+function fullRestart(){
+  document.getElementById('win-overlay').classList.remove('show');
+  currentMsgIdx=0; foundMessages=[];
+  buildProgressBar(); buildGrid();
+}
+
+// ── CONFETTI ────────────────────────────────────
+function spawnConfetti(n=60){
+  const cols=['#FF6B6B','#FFE66D','#4ECDC4','#C77DFF','#74B3FF','#95D44A','#FF9F43','#fd79a8'];
+  for(let i=0;i<n;i++){
+    const c=document.createElement('div'); c.className='conf';
+    const sz=5+Math.random()*8;
+    c.style.cssText=`left:${Math.random()*100}vw;top:-15px;width:${sz}px;height:${sz}px;background:${cols[Math.floor(Math.random()*cols.length)]};border-radius:${Math.random()>.5?'50%':'2px'};--d:${1.5+Math.random()*2.5}s;animation-delay:${Math.random()*0.6}s;`;
+    document.body.appendChild(c);
+    setTimeout(()=>c.remove(),5000);
+  }
+}
+</script>
+</body>
+</html>
