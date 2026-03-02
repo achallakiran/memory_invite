@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📸 Geo Selfie!</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Boogaloo&family=VT323&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: #0d0d1a;
+  min-height: 100vh;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  font-family: 'VT323', monospace;
+  overflow: hidden;
+  background-image:
+    repeating-linear-gradient(0deg, transparent, transparent 40px, rgba(0,255,180,0.03) 40px, rgba(0,255,180,0.03) 41px),
+    repeating-linear-gradient(90deg, transparent, transparent 40px, rgba(0,255,180,0.03) 40px, rgba(0,255,180,0.03) 41px);
+}
+
+h1 {
+  font-family: 'Boogaloo', cursive;
+  color: #00ffb4;
+  font-size: 2.4rem;
+  letter-spacing: 4px;
+  margin-bottom: 14px;
+  text-shadow: 0 0 20px #00ffb4, 3px 3px 0 #ff2d78;
+}
+
+/* ── Phone ── */
+.phone {
+  position: relative; width: 320px;
+  background: #111;
+  border-radius: 40px;
+  padding: 16px 10px 24px;
+  box-shadow: 0 0 0 3px #333, 0 0 0 5px #00ffb4, 0 20px 60px rgba(0,255,180,0.15);
+}
+.notch {
+  width: 80px; height: 16px; background: #111;
+  border-radius: 0 0 12px 12px; margin: 0 auto 8px;
+}
+
+/* ── Screen ── */
+.screen {
+  position: relative; width: 100%; height: 400px;
+  border-radius: 18px; overflow: hidden;
+  background: #000;
+  border: 2px solid #222;
+}
+
+/* The actual live video - VISIBLE, mirrored like a selfie cam */
+#liveVideo {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1);
+  border-radius: 16px;
+  display: block;
+  z-index: 1;
+}
+
+/* Retro scanlines on top of camera */
+.scanlines {
+  position: absolute; inset: 0; z-index: 2; pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom, transparent, transparent 3px,
+    rgba(0,0,0,0.18) 3px, rgba(0,0,0,0.18) 4px
+  );
+  border-radius: 16px;
+}
+
+/* Retro color tint overlay */
+.retro-tint {
+  position: absolute; inset: 0; z-index: 2; pointer-events: none;
+  background: linear-gradient(135deg, rgba(255,45,120,0.08), rgba(0,255,180,0.08));
+  border-radius: 16px;
+  mix-blend-mode: screen;
+}
+
+/* Corner brackets */
+.brackets { position: absolute; inset: 10px; pointer-events: none; z-index: 4; }
+.bracket { position: absolute; width: 24px; height: 24px; border-color: #00ffb4; border-style: solid; }
+.bracket.tl { top:0; left:0;   border-width: 3px 0 0 3px; }
+.bracket.tr { top:0; right:0;  border-width: 3px 3px 0 0; }
+.bracket.bl { bottom:0; left:0; border-width: 0 0 3px 3px; }
+.bracket.br { bottom:0; right:0; border-width: 0 3px 3px 0; }
+
+/* Retro HUD elements */
+.hud-tl {
+  position: absolute; top: 12px; left: 14px;
+  color: #00ffb4; font-size: 0.75rem; z-index: 4;
+  text-shadow: 0 0 6px #00ffb4;
+  animation: blink 1.5s step-end infinite;
+}
+@keyframes blink { 50% { opacity: 0; } }
+.hud-tr {
+  position: absolute; top: 12px; right: 14px;
+  color: #ff2d78; font-size: 0.75rem; z-index: 4;
+  text-shadow: 0 0 6px #ff2d78;
+}
+
+/* No camera fallback */
+#noCamera {
+  position: absolute; inset: 0; z-index: 1;
+  background: linear-gradient(135deg, #0d0d2e 0%, #1a0a2e 50%, #0a1a1a 100%);
+  display: none; align-items: center; justify-content: center;
+  flex-direction: column; gap: 10px;
+  border-radius: 16px;
+}
+#noCamera p { color: #00ffb4; font-size: 1rem; text-align: center; padding: 10px; line-height: 1.5; }
+.no-cam-icon { font-size: 3rem; }
+
+/* Flash */
+.flash {
+  position: absolute; inset: 0; background: #fff;
+  opacity: 0; pointer-events: none; z-index: 10; border-radius: 16px;
+}
+.flash.go { animation: flashGo 0.5s ease-out forwards; }
+@keyframes flashGo { 0%{opacity:1} 100%{opacity:0} }
+
+/* ── Photo popup ── */
+.photo-popup {
+  position: absolute; inset: 0; z-index: 20;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.75);
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.2s; border-radius: 16px;
+}
+.photo-popup.show { opacity: 1; pointer-events: all; }
+
+.polaroid {
+  background: #fff; padding: 8px 8px 36px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.8), 0 0 0 1px #eee;
+  cursor: pointer;
+  animation: popIn 0.35s cubic-bezier(0.17,0.67,0.35,1.3) forwards;
+  position: relative;
+}
+@keyframes popIn { from{transform:scale(0.4) rotate(-4deg)} to{transform:scale(1) rotate(-2deg)} }
+#snapCanvas { display: block; width: 220px; height: 220px; }
+.polaroid-caption {
+  position: absolute; bottom: 8px; left: 0; right: 0;
+  text-align: center; font-family: 'Boogaloo', cursive;
+  font-size: 1rem; color: #333; letter-spacing: 1px;
+}
+
+/* ── Birthday card ── */
+.bday-popup {
+  position: absolute; inset: 0; z-index: 30;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.85);
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.25s; border-radius: 16px;
+}
+.bday-popup.show { opacity: 1; pointer-events: all; }
+.bday-card {
+  background: linear-gradient(135deg, #1a0030, #001a30);
+  border: 3px solid; border-image: linear-gradient(135deg,#ff2d78,#ffcc00,#00ffb4,#ff2d78) 1;
+  padding: 20px 18px 16px;
+  max-width: 240px; text-align: center; cursor: pointer;
+  animation: popIn 0.35s cubic-bezier(0.17,0.67,0.35,1.3) forwards;
+}
+.bday-emoji-row { font-size: 1.6rem; letter-spacing: 3px; margin-bottom: 8px; }
+.bday-title {
+  font-family: 'Boogaloo', cursive; font-size: 1.5rem;
+  color: #ffcc00; margin-bottom: 10px;
+  text-shadow: 0 0 10px #ffcc00;
+}
+.bday-text {
+  font-family: 'VT323', monospace; font-size: 1.05rem;
+  color: #00ffb4; line-height: 1.7;
+}
+.bday-text .hi { color: #ff2d78; font-size: 1.1rem; }
+.bday-close { font-size: 0.7rem; color: rgba(255,255,255,0.3); margin-top: 10px; }
+
+/* ── Counter ── */
+.hud-count {
+  position: absolute; bottom: 10px; right: 14px; z-index: 4;
+  color: #ffcc00; font-size: 0.85rem;
+  text-shadow: 0 0 6px #ffcc00;
+}
+
+/* ── Controls ── */
+.controls {
+  display: flex; align-items: center; justify-content: center;
+  margin-top: 16px; gap: 16px;
+}
+.shutter-outer {
+  width: 68px; height: 68px; border-radius: 50%;
+  border: 3px solid #00ffb4;
+  box-shadow: 0 0 14px #00ffb4, inset 0 0 8px rgba(0,255,180,0.1);
+  display: flex; align-items: center; justify-content: center;
+}
+.shutter-btn {
+  width: 52px; height: 52px; border-radius: 50%;
+  background: #ff2d78;
+  border: none; cursor: pointer;
+  box-shadow: 0 0 16px #ff2d78, 0 0 32px rgba(255,45,120,0.4);
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+.shutter-btn:hover { transform: scale(1.08); box-shadow: 0 0 24px #ff2d78, 0 0 48px rgba(255,45,120,0.5); }
+.shutter-btn:active { transform: scale(0.92); }
+
+/* ── Gallery ── */
+.gallery {
+  display: flex; gap: 8px; margin-top: 14px;
+  align-items: center; justify-content: center; height: 50px;
+}
+.thumb {
+  width: 42px; height: 42px; border-radius: 4px;
+  border: 2px solid #333; overflow: hidden;
+  flex-shrink: 0; cursor: pointer;
+  transition: border-color 0.2s, transform 0.2s;
+  box-shadow: 0 0 8px rgba(0,255,180,0.1);
+}
+.thumb:hover { border-color: #00ffb4; transform: scale(1.12); box-shadow: 0 0 12px #00ffb4; }
+.thumb canvas { width: 100%; height: 100%; display: block; }
+
+.hint {
+  color: rgba(0,255,180,0.3); font-size: 0.9rem;
+  margin-top: 8px; text-align: center; letter-spacing: 2px;
+}
+
+/* ── Perm modal ── */
+#permModal {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.92);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 100; padding: 20px;
+}
+.perm-box {
+  background: #0d0d1a;
+  border: 2px solid #00ffb4;
+  box-shadow: 0 0 30px rgba(0,255,180,0.2), inset 0 0 30px rgba(0,255,180,0.02);
+  border-radius: 4px;
+  padding: 34px 28px 28px;
+  max-width: 300px; width: 100%;
+  text-align: center;
+  animation: slideUp 0.3s ease-out;
+}
+@keyframes slideUp { from{transform:translateY(24px);opacity:0} to{transform:translateY(0);opacity:1} }
+.perm-icon { font-size: 3rem; display: block; margin-bottom: 12px; }
+.perm-title {
+  font-family: 'Boogaloo', cursive; font-size: 1.8rem;
+  color: #00ffb4; margin-bottom: 8px;
+  text-shadow: 0 0 12px #00ffb4;
+}
+.perm-body { color: rgba(255,255,255,0.65); font-family: 'Nunito', sans-serif; font-size: 0.88rem; line-height: 1.55; margin-bottom: 22px; }
+.perm-body strong { color: #ff2d78; }
+.perm-btns { display: flex; gap: 10px; justify-content: center; }
+.btn-yes {
+  background: #ff2d78; color: #fff; border: none; border-radius: 2px;
+  padding: 11px 26px; font-family: 'Boogaloo', cursive; font-size: 1.1rem;
+  cursor: pointer; letter-spacing: 1px;
+  box-shadow: 0 0 16px rgba(255,45,120,0.5);
+  transition: transform 0.1s;
+}
+.btn-yes:hover { transform: scale(1.05); }
+.btn-yes:active { transform: scale(0.95); }
+.btn-no {
+  background: transparent; color: rgba(255,255,255,0.4);
+  border: 1px solid rgba(255,255,255,0.15); border-radius: 2px;
+  padding: 11px 18px; font-size: 0.88rem; cursor: pointer;
+  transition: color 0.2s; font-family: monospace;
+}
+.btn-no:hover { color: rgba(255,255,255,0.7); }
+</style>
+</head>
+<body>
+
+<div id="permModal">
+  <div class="perm-box">
+    <span class="perm-icon">📷</span>
+    <div class="perm-title">GEO SELFIE!</div>
+    <div class="perm-body">
+      Point your camera at yourself — we'll snap a photo and instantly generate a
+      <strong>geometric retro cartoon</strong> that's inspired by you!<br><br>
+      Nothing is stored or uploaded.
+    </div>
+    <div class="perm-btns">
+      <button class="btn-yes" onclick="startCamera()">📸 ALLOW CAMERA</button>
+      <button class="btn-no" onclick="noCamera()">SKIP</button>
+    </div>
+  </div>
+</div>
+
+<h1>GEO SELFIE!</h1>
+
+<div class="phone">
+  <div class="notch"></div>
+  <div class="screen" id="screen">
+
+    <!-- THE LIVE CAMERA VIDEO — always visible when camera is on -->
+    <video id="liveVideo" autoplay playsinline muted></video>
+
+    <!-- Retro overlays ON TOP of video -->
+    <div class="scanlines"></div>
+    <div class="retro-tint"></div>
+
+    <!-- No-camera fallback -->
+    <div id="noCamera">
+      <div class="no-cam-icon">📷</div>
+      <p>No camera available.<br>Hit snap for a virtual geo selfie!</p>
+    </div>
+
+    <div class="brackets">
+      <div class="bracket tl"></div><div class="bracket tr"></div>
+      <div class="bracket bl"></div><div class="bracket br"></div>
+    </div>
+
+    <div class="hud-tl">● REC</div>
+    <div class="hud-tr" id="hudTime">00:00</div>
+    <div class="hud-count" id="hudCount"></div>
+
+    <div class="flash" id="flash"></div>
+
+    <!-- Snap photo popup -->
+    <div class="photo-popup" id="photoPopup">
+      <div class="polaroid" onclick="closeSnap()">
+        <canvas id="snapCanvas" width="220" height="220"></canvas>
+        <div class="polaroid-caption" id="snapCaption">⚡ GEO SNAP ⚡</div>
+      </div>
+    </div>
+
+    <!-- Birthday card popup -->
+    <div class="bday-popup" id="bdayPopup">
+      <div class="bday-card" onclick="closeBday()">
+        <div class="bday-emoji-row">🎉🎂🎈🎊🥳</div>
+        <div class="bday-title">YOU'RE INVITED!</div>
+        <div class="bday-text">
+          Celebrate<br>
+          <span class="hi">KAUSTUBH'S 4TH</span><br>
+          <span class="hi">BIRTHDAY! 🎂</span><br><br>
+          📅 SUNDAY, MARCH 1<br>
+          📍 BRIGADE CORNERSTONE<br>
+          UTOPIA CLUBHOUSE<br>
+          🕕 6 PM ONWARDS<br><br>
+          DON'T MISS IT! 🎈
+        </div>
+        <div class="bday-close">[ tap to close ]</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="controls">
+    <div class="shutter-outer">
+      <button class="shutter-btn" onclick="snap()"></button>
+    </div>
+  </div>
+</div>
+
+<div class="gallery" id="gallery"></div>
+<div class="hint">▶ PRESS RED BUTTON TO SNAP</div>
+
+<script>
+// ─── state ───
+let stream = null;
+let hasCamera = false;
+let snapCount = 0;
+let bdayShown = false;
+const captions = ['⚡ GEO SNAP ⚡','★ RETRO TOON ★','◆ ART MODE ◆','▲ ICONIC ▲','● SNAP! ●','◉ LEGEND ◉','✦ NAILED IT ✦'];
+
+// ─── HUD clock ───
+setInterval(() => {
+  const n = new Date();
+  document.getElementById('hudTime').textContent =
+    String(n.getHours()).padStart(2,'0') + ':' + String(n.getMinutes()).padStart(2,'0');
+}, 1000);
+
+// ─── Camera ───
+async function startCamera() {
+  document.getElementById('permModal').style.display = 'none';
+
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'user' }, width: { ideal: 1280 }, height: { ideal: 720 } },
+      audio: false
+    });
+
+    const vid = document.getElementById('liveVideo');
+    vid.srcObject = stream;
+
+    // Make sure video plays and is visible
+    vid.onloadedmetadata = () => {
+      vid.play().catch(console.warn);
+    };
+
+    hasCamera = true;
+    document.getElementById('noCamera').style.display = 'none';
+    document.getElementById('liveVideo').style.display = 'block';
+
+  } catch (e) {
+    console.warn('Camera error:', e);
+    noCamera();
+  }
+}
+
+function noCamera() {
+  document.getElementById('permModal').style.display = 'none';
+  document.getElementById('liveVideo').style.display = 'none';
+  document.getElementById('noCamera').style.display = 'flex';
+  hasCamera = false;
+}
+
+// ─── Snap ───
+function snap() {
+  const flashEl = document.getElementById('flash');
+  flashEl.classList.remove('go');
+  void flashEl.offsetWidth;
+  flashEl.classList.add('go');
+
+  setTimeout(() => {
+    const canvas = document.getElementById('snapCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // Always draw the geometric cartoon selfie
+    drawGeoSelfie(ctx, 220, 220);
+
+    snapCount++;
+    document.getElementById('hudCount').textContent = snapCount + ' SNAP' + (snapCount !== 1 ? 'S' : '');
+    document.getElementById('snapCaption').textContent = captions[snapCount % captions.length];
+
+    // Show photo popup
+    document.getElementById('photoPopup').classList.add('show');
+
+    // Add thumbnail
+    const gal = document.getElementById('gallery');
+    const div = document.createElement('div');
+    div.className = 'thumb';
+    const tc = document.createElement('canvas');
+    tc.width = 42; tc.height = 42;
+    tc.getContext('2d').drawImage(canvas, 0, 0, 42, 42);
+    div.appendChild(tc);
+    const dataUrl = canvas.toDataURL();
+    div.onclick = () => {
+      const img = new Image();
+      img.onload = () => { ctx.drawImage(img, 0, 0, 220, 220); document.getElementById('photoPopup').classList.add('show'); };
+      img.src = dataUrl;
+    };
+    gal.insertBefore(div, gal.firstChild);
+    if (gal.children.length > 5) gal.removeChild(gal.lastChild);
+
+  }, 150);
+}
+
+function closeSnap() {
+  document.getElementById('photoPopup').classList.remove('show');
+  if (!bdayShown) {
+    bdayShown = true;
+    setTimeout(() => document.getElementById('bdayPopup').classList.add('show'), 300);
+  }
+}
+function closeBday() {
+  document.getElementById('bdayPopup').classList.remove('show');
+}
+
+// ─── GEOMETRIC RETRO SELFIE GENERATOR ───
+// Generates a fun, abstract geometric figure that differs each time
+
+function rnd(a, b) { return Math.random() * (b - a) + a; }
+function rndI(a, b) { return Math.floor(rnd(a, b + 1)); }
+function pick(arr) { return arr[rndI(0, arr.length - 1)]; }
+
+// Retro palettes
+const PALETTES = [
+  // Synthwave
+  { bg1:'#0d0221', bg2:'#220d3a', primary:'#ff2d78', secondary:'#00ffb4', accent:'#ffcc00', dark:'#1a0030' },
+  // Outrun
+  { bg1:'#1a0a00', bg2:'#0a1a2e', primary:'#ff6600', secondary:'#00ccff', accent:'#ffff00', dark:'#100800' },
+  // Arcade green
+  { bg1:'#001a00', bg2:'#000d1a', primary:'#00ff44', secondary:'#ff44ff', accent:'#ffff44', dark:'#000d00' },
+  // Miami
+  { bg1:'#1a001a', bg2:'#0a0a2e', primary:'#ff44aa', secondary:'#44ffff', accent:'#ffaa00', dark:'#100010' },
+  // Tron
+  { bg1:'#000d1a', bg2:'#001a0d', primary:'#00ccff', secondary:'#ff2d78', accent:'#00ff99', dark:'#000810' },
+];
+
+const FACE_SHAPES = ['circle','square','diamond','hexagon'];
+const HAIR_STYLES = ['spiky','mohawk','afro','bob','bun','none'];
+const EYE_SHAPES  = ['circle','square','star','triangle'];
+const ACCESSORIES = ['glasses-sq','glasses-round','hat-flat','hat-cowboy','antenna','crown','none','none','none'];
+const EXPRESSIONS = ['happy','cool','surprised','wink','grin','robot'];
+
+function drawGeoSelfie(ctx, W, H) {
+  const P = pick(PALETTES);
+  const faceShape = pick(FACE_SHAPES);
+  const hairStyle = pick(HAIR_STYLES);
+  const eyeShape  = pick(EYE_SHAPES);
+  const acc       = pick(ACCESSORIES);
+  const expr      = pick(EXPRESSIONS);
+  const bodyColor = P.secondary;
+  const faceColor = P.primary;
+  const hairColor = pick([P.accent, P.secondary, P.primary, '#ffffff', '#ff6600', '#aa00ff']);
+
+  // ── RETRO BACKGROUND ──
+  drawRetroBg(ctx, W, H, P);
+
+  const cx = W / 2;
+  const cy = H / 2 + 10;
+
+  // ── BODY (geometric torso) ──
+  ctx.fillStyle = bodyColor;
+  // Trapezoid torso
+  ctx.beginPath();
+  ctx.moveTo(cx - 55, H - 10);
+  ctx.lineTo(cx + 55, H - 10);
+  ctx.lineTo(cx + 35, cy + 60);
+  ctx.lineTo(cx - 35, cy + 60);
+  ctx.closePath();
+  ctx.fill();
+  // Body pattern lines
+  ctx.strokeStyle = P.dark;
+  ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(cx, cy+62); ctx.lineTo(cx, H-12); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx-20, cy+75); ctx.lineTo(cx-40, H-12); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx+20, cy+75); ctx.lineTo(cx+40, H-12); ctx.stroke();
+
+  // Arms
+  ctx.fillStyle = bodyColor;
+  drawGeoArm(ctx, cx - 50, cy + 65, -0.3, P.dark);
+  drawGeoArm(ctx, cx + 50, cy + 65, 0.3, P.dark);
+
+  // Neck
+  ctx.fillStyle = faceColor;
+  ctx.fillRect(cx - 14, cy + 42, 28, 24);
+
+  // ── HAIR (behind face) ──
+  if (hairStyle !== 'none') drawHair(ctx, cx, cy, hairStyle, hairColor, P.dark, faceShape);
+
+  // ── FACE ──
+  ctx.fillStyle = faceColor;
+  ctx.strokeStyle = P.dark;
+  ctx.lineWidth = 3;
+  drawFaceShape(ctx, cx, cy, faceShape, 58, 66);
+
+  // Ear-like side details
+  ctx.fillStyle = faceColor;
+  ctx.strokeStyle = P.dark;
+  ctx.lineWidth = 2;
+  const earY = cy + 5;
+  // left ear
+  ctx.beginPath(); ctx.rect(cx - 68, earY - 10, 14, 20); ctx.fill(); ctx.stroke();
+  // right ear
+  ctx.beginPath(); ctx.rect(cx + 54, earY - 10, 14, 20); ctx.fill(); ctx.stroke();
+  // inner ear
+  ctx.fillStyle = P.dark;
+  ctx.beginPath(); ctx.rect(cx - 64, earY - 5, 6, 10); ctx.fill();
+  ctx.beginPath(); ctx.rect(cx + 58, earY - 5, 6, 10); ctx.fill();
+
+  // ── EYES ──
+  drawEyes(ctx, cx, cy, eyeShape, expr, P);
+
+  // ── NOSE ──
+  ctx.fillStyle = P.dark;
+  ctx.globalAlpha = 0.5;
+  ctx.beginPath();
+  ctx.moveTo(cx, cy + 12);
+  ctx.lineTo(cx - 7, cy + 26);
+  ctx.lineTo(cx + 7, cy + 26);
+  ctx.closePath();
+  ctx.fill();
+  ctx.globalAlpha = 1;
+
+  // ── MOUTH ──
+  drawMouth(ctx, cx, cy, expr, P);
+
+  // ── ACCESSORY ──
+  drawAccessory(ctx, cx, cy, acc, faceShape, hairColor, P);
+
+  // ── RETRO FRAME & STICKERS ──
+  drawRetroFrame(ctx, W, H, P);
+}
+
+// ── RETRO BACKGROUND ──
+function drawRetroBg(ctx, W, H, P) {
+  // Base gradient
+  const grad = ctx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0, P.bg1);
+  grad.addColorStop(1, P.bg2);
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+
+  // Retro grid floor (bottom half)
+  ctx.save();
+  ctx.strokeStyle = P.primary;
+  ctx.lineWidth = 0.8;
+  ctx.globalAlpha = 0.25;
+  // Horizontal lines converging to horizon
+  const horizon = H * 0.55;
+  for (let i = 0; i < 10; i++) {
+    const y = horizon + (H - horizon) * (i / 9);
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+  }
+  // Vertical lines
+  const vp = W / 2;
+  for (let i = -6; i <= 6; i++) {
+    ctx.beginPath();
+    ctx.moveTo(vp + i * 60, horizon);
+    ctx.lineTo(vp + i * 200, H);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // Sun/circle in background
+  ctx.save();
+  ctx.globalAlpha = 0.18;
+  const sunGrad = ctx.createRadialGradient(W/2, H*0.3, 0, W/2, H*0.3, 70);
+  sunGrad.addColorStop(0, P.accent);
+  sunGrad.addColorStop(1, 'transparent');
+  ctx.fillStyle = sunGrad;
+  ctx.beginPath(); ctx.arc(W/2, H*0.3, 70, 0, Math.PI*2); ctx.fill();
+  ctx.restore();
+
+  // Background floating shapes
+  ctx.save();
+  ctx.globalAlpha = 0.08;
+  const shapes = [
+    { x:20,  y:30,  s:30, t:'tri'  },
+    { x:185, y:20,  s:22, t:'sq'   },
+    { x:10,  y:160, s:18, t:'sq'   },
+    { x:200, y:140, s:26, t:'tri'  },
+    { x:40,  y:H-40,s:20, t:'dia'  },
+    { x:180, y:H-50,s:18, t:'dia'  },
+  ];
+  ctx.fillStyle = P.accent;
+  shapes.forEach(sh => {
+    ctx.beginPath();
+    if (sh.t === 'tri') {
+      ctx.moveTo(sh.x, sh.y - sh.s); ctx.lineTo(sh.x + sh.s, sh.y + sh.s); ctx.lineTo(sh.x - sh.s, sh.y + sh.s); ctx.closePath();
+    } else if (sh.t === 'sq') {
+      ctx.rect(sh.x - sh.s/2, sh.y - sh.s/2, sh.s, sh.s);
+    } else {
+      ctx.moveTo(sh.x, sh.y - sh.s); ctx.lineTo(sh.x + sh.s, sh.y); ctx.lineTo(sh.x, sh.y + sh.s); ctx.lineTo(sh.x - sh.s, sh.y); ctx.closePath();
+    }
+    ctx.fill();
+  });
+  ctx.restore();
+}
+
+// ── FACE SHAPES ──
+function drawFaceShape(ctx, cx, cy, shape, rw, rh) {
+  ctx.beginPath();
+  if (shape === 'circle') {
+    ctx.ellipse(cx, cy, rw * 0.8, rh * 0.8, 0, 0, Math.PI * 2);
+  } else if (shape === 'square') {
+    const r = 14;
+    const x = cx - rw, y = cy - rh;
+    ctx.moveTo(x + r, y); ctx.lineTo(x + rw*2 - r, y);
+    ctx.quadraticCurveTo(x + rw*2, y, x + rw*2, y + r);
+    ctx.lineTo(x + rw*2, y + rh*2 - r);
+    ctx.quadraticCurveTo(x + rw*2, y + rh*2, x + rw*2 - r, y + rh*2);
+    ctx.lineTo(x + r, y + rh*2);
+    ctx.quadraticCurveTo(x, y + rh*2, x, y + rh*2 - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+  } else if (shape === 'diamond') {
+    ctx.moveTo(cx, cy - rh);
+    ctx.lineTo(cx + rw * 0.85, cy);
+    ctx.lineTo(cx, cy + rh);
+    ctx.lineTo(cx - rw * 0.85, cy);
+    ctx.closePath();
+  } else { // hexagon
+    for (let i = 0; i < 6; i++) {
+      const angle = (Math.PI / 3) * i - Math.PI / 6;
+      const px = cx + rw * 0.85 * Math.cos(angle);
+      const py = cy + rh * 0.85 * Math.sin(angle);
+      i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+  }
+  ctx.fill(); ctx.stroke();
+}
+
+// ── HAIR ──
+function drawHair(ctx, cx, cy, style, color, dark, faceShape) {
+  ctx.fillStyle = color;
+  ctx.strokeStyle = dark;
+  ctx.lineWidth = 2.5;
+  const top = cy - 58;
+
+  if (style === 'spiky') {
+    const spikes = 7;
+    ctx.beginPath();
+    for (let i = 0; i < spikes; i++) {
+      const bx = cx - 50 + (100 / (spikes - 1)) * i;
+      ctx.lineTo(bx, top + 10);
+      ctx.lineTo(bx + 7, top - 20 - rnd(0, 20));
+    }
+    ctx.lineTo(cx + 50, top + 10);
+    ctx.lineTo(cx + 50, top + 22);
+    ctx.lineTo(cx - 50, top + 22);
+    ctx.closePath();
+    ctx.fill(); ctx.stroke();
+
+  } else if (style === 'mohawk') {
+    ctx.beginPath();
+    ctx.moveTo(cx - 16, top + 12);
+    ctx.lineTo(cx - 10, top - 44);
+    ctx.lineTo(cx + 10, top - 44);
+    ctx.lineTo(cx + 16, top + 12);
+    ctx.closePath();
+    ctx.fill(); ctx.stroke();
+
+  } else if (style === 'afro') {
+    for (let i = 0; i < 9; i++) {
+      const angle = (Math.PI / 8) * i - Math.PI / 2;
+      const r = 44 + rnd(-6, 6);
+      ctx.beginPath();
+      ctx.arc(cx + r * Math.cos(angle) * 0.5, (cy - 10) + r * Math.sin(angle) * 0.5, 28 + rnd(0, 8), 0, Math.PI * 2);
+      ctx.fill(); ctx.stroke();
+    }
+
+  } else if (style === 'bob') {
+    ctx.beginPath();
+    ctx.ellipse(cx, top + 5, 60, 30, 0, Math.PI, 0);
+    ctx.lineTo(cx + 60, cy + 20);
+    ctx.lineTo(cx - 60, cy + 20);
+    ctx.closePath();
+    ctx.fill(); ctx.stroke();
+
+  } else if (style === 'bun') {
+    ctx.beginPath();
+    ctx.ellipse(cx, top - 22, 28, 24, 0, 0, Math.PI * 2);
+    ctx.fill(); ctx.stroke();
+    ctx.beginPath();
+    ctx.ellipse(cx, top + 6, 52, 18, 0, Math.PI, 0);
+    ctx.fill(); ctx.stroke();
+    // bun detail
+    ctx.beginPath();
+    ctx.arc(cx, top - 22, 12, 0, Math.PI * 2);
+    ctx.strokeStyle = dark; ctx.lineWidth = 1.5; ctx.stroke();
+  }
+}
+
+// ── EYES ──
+function drawEyes(ctx, cx, cy, eyeShape, expr, P) {
+  const eyeY = cy - 10;
+  const eyePositions = [cx - 22, cx + 22];
+  const isWink = expr === 'wink';
+
+  eyePositions.forEach((ex, idx) => {
+    if (isWink && idx === 0) {
+      // Wink line
+      ctx.strokeStyle = P.dark;
+      ctx.lineWidth = 4;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(ex - 11, eyeY); ctx.lineTo(ex + 11, eyeY);
+      ctx.stroke();
+      return;
+    }
+
+    // Eye white / base
+    ctx.fillStyle = '#ffffff';
+    ctx.strokeStyle = P.dark;
+    ctx.lineWidth = 2.5;
+
+    if (eyeShape === 'circle') {
+      ctx.beginPath(); ctx.ellipse(ex, eyeY, 13, 13, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    } else if (eyeShape === 'square') {
+      ctx.beginPath(); ctx.rect(ex - 13, eyeY - 12, 26, 22); ctx.fill(); ctx.stroke();
+    } else if (eyeShape === 'star') {
+      drawStar(ctx, ex, eyeY, 5, 13, 6);
+      ctx.fill(); ctx.stroke();
+    } else if (eyeShape === 'triangle') {
+      ctx.beginPath();
+      ctx.moveTo(ex, eyeY - 13); ctx.lineTo(ex + 14, eyeY + 11); ctx.lineTo(ex - 14, eyeY + 11);
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+    }
+
+    // Pupil
+    ctx.fillStyle = expr === 'robot' ? P.primary : P.dark;
+    if (expr === 'surprised') {
+      ctx.beginPath(); ctx.ellipse(ex, eyeY, 7, 9, 0, 0, Math.PI * 2); ctx.fill();
+    } else {
+      ctx.beginPath(); ctx.ellipse(ex + 1, eyeY + 1, 5, 5, 0, 0, Math.PI * 2); ctx.fill();
+    }
+
+    // Shine
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath(); ctx.ellipse(ex + 4, eyeY - 4, 3, 3, 0, 0, Math.PI * 2); ctx.fill();
+
+    // Robot scan line
+    if (expr === 'robot') {
+      ctx.fillStyle = P.primary;
+      ctx.globalAlpha = 0.6;
+      ctx.fillRect(ex - 13, eyeY - 2, 26, 4);
+      ctx.globalAlpha = 1;
+    }
+  });
+
+  // Eyebrows
+  ctx.strokeStyle = P.dark;
+  ctx.lineWidth = 4; ctx.lineCap = 'round';
+  eyePositions.forEach((ex, idx) => {
+    if (isWink && idx === 0) return;
+    ctx.beginPath();
+    if (expr === 'surprised') {
+      ctx.moveTo(ex - 12, eyeY - 20); ctx.quadraticCurveTo(ex, eyeY - 28, ex + 12, eyeY - 20);
+    } else if (expr === 'cool') {
+      ctx.moveTo(ex - 12, eyeY - 18); ctx.lineTo(ex + 12, eyeY - 18);
+    } else {
+      ctx.moveTo(ex - 12, eyeY - 18); ctx.quadraticCurveTo(ex, eyeY - 24, ex + 12, eyeY - 18);
+    }
+    ctx.stroke();
+  });
+}
+
+// ── MOUTH ──
+function drawMouth(ctx, cx, cy, expr, P) {
+  const my = cy + 36;
+  ctx.strokeStyle = P.dark;
+  ctx.lineWidth = 3.5;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  if (expr === 'happy' || expr === 'wink') {
+    ctx.beginPath();
+    ctx.moveTo(cx - 18, my);
+    ctx.quadraticCurveTo(cx, my + 16, cx + 18, my);
+    ctx.stroke();
+    // teeth
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.moveTo(cx - 14, my + 1);
+    ctx.quadraticCurveTo(cx, my + 12, cx + 14, my + 1);
+    ctx.lineTo(cx + 14, my + 7);
+    ctx.quadraticCurveTo(cx, my + 15, cx - 14, my + 7);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+
+  } else if (expr === 'grin') {
+    ctx.fillStyle = P.dark;
+    ctx.beginPath();
+    ctx.moveTo(cx - 20, my);
+    ctx.quadraticCurveTo(cx, my + 20, cx + 20, my);
+    ctx.quadraticCurveTo(cx, my + 30, cx - 20, my);
+    ctx.closePath(); ctx.fill();
+    // big teeth
+    ctx.fillStyle = '#ffffff';
+    for (let t = -2; t <= 1; t++) {
+      ctx.fillRect(cx + t * 9 + 1, my + 3, 7, 10);
+    }
+
+  } else if (expr === 'cool') {
+    ctx.beginPath();
+    ctx.moveTo(cx - 16, my + 4);
+    ctx.quadraticCurveTo(cx + 4, my + 16, cx + 20, my - 2);
+    ctx.stroke();
+
+  } else if (expr === 'surprised') {
+    ctx.fillStyle = P.dark;
+    ctx.beginPath();
+    ctx.ellipse(cx, my + 8, 12, 16, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#330000';
+    ctx.beginPath();
+    ctx.ellipse(cx, my + 8, 8, 11, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+  } else if (expr === 'robot') {
+    ctx.fillStyle = P.accent;
+    ctx.globalAlpha = 0.9;
+    ctx.fillRect(cx - 18, my, 36, 12);
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = P.dark; ctx.lineWidth = 2;
+    ctx.strokeRect(cx - 18, my, 36, 12);
+    // LED dots
+    ctx.fillStyle = P.dark;
+    for (let d = 0; d < 5; d++) {
+      ctx.beginPath(); ctx.arc(cx - 14 + d * 7, my + 6, 2, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+}
+
+// ── ACCESSORY ──
+function drawAccessory(ctx, cx, cy, acc, faceShape, color, P) {
+  const top = cy - 65;
+  ctx.strokeStyle = P.dark;
+  ctx.lineWidth = 2.5;
+
+  if (acc === 'glasses-sq') {
+    ctx.strokeStyle = P.accent; ctx.lineWidth = 3;
+    ctx.fillStyle = 'rgba(255,255,255,0.08)';
+    [cx - 22, cx + 22].forEach(ex => {
+      ctx.beginPath(); ctx.rect(ex - 16, cy - 22, 30, 22); ctx.fill(); ctx.stroke();
+    });
+    ctx.beginPath(); ctx.moveTo(cx - 6, cy - 11); ctx.lineTo(cx + 6, cy - 11); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx - 38, cy - 11); ctx.lineTo(cx - 70, cy - 8); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx + 52, cy - 11); ctx.lineTo(cx + 70, cy - 8); ctx.stroke();
+
+  } else if (acc === 'glasses-round') {
+    ctx.strokeStyle = P.accent; ctx.lineWidth = 3;
+    ctx.fillStyle = 'rgba(255,255,255,0.08)';
+    [cx - 22, cx + 22].forEach(ex => {
+      ctx.beginPath(); ctx.ellipse(ex, cy - 11, 15, 13, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    });
+    ctx.beginPath(); ctx.moveTo(cx - 7, cy - 11); ctx.lineTo(cx + 7, cy - 11); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx - 37, cy - 11); ctx.lineTo(cx - 68, cy - 9); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx + 37, cy - 11); ctx.lineTo(cx + 68, cy - 9); ctx.stroke();
+
+  } else if (acc === 'hat-flat') {
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.ellipse(cx, top + 4, 66, 12, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    ctx.fillRect(cx - 46, top - 38, 92, 44);
+    ctx.strokeRect(cx - 46, top - 38, 92, 44);
+    ctx.fillStyle = P.primary;
+    ctx.fillRect(cx - 46, top + 4, 92, 8);
+
+  } else if (acc === 'hat-cowboy') {
+    ctx.fillStyle = color;
+    // brim
+    ctx.beginPath(); ctx.ellipse(cx, top + 4, 76, 14, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    // crown
+    ctx.beginPath();
+    ctx.moveTo(cx - 38, top + 4);
+    ctx.lineTo(cx - 34, top - 46);
+    ctx.lineTo(cx + 34, top - 46);
+    ctx.lineTo(cx + 38, top + 4);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+    // dent
+    ctx.fillStyle = P.primary;
+    ctx.beginPath(); ctx.ellipse(cx, top - 46, 20, 8, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+
+  } else if (acc === 'antenna') {
+    ctx.strokeStyle = color; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.moveTo(cx, top - 4); ctx.lineTo(cx, top - 42); ctx.stroke();
+    ctx.fillStyle = P.primary;
+    ctx.beginPath(); ctx.arc(cx, top - 46, 9, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    // signal rings
+    ctx.strokeStyle = P.primary; ctx.lineWidth = 1.5; ctx.globalAlpha = 0.4;
+    [16, 26, 36].forEach(r => {
+      ctx.beginPath(); ctx.arc(cx, top - 46, r, 0, Math.PI * 2); ctx.stroke();
+    });
+    ctx.globalAlpha = 1;
+
+  } else if (acc === 'crown') {
+    ctx.fillStyle = P.accent; ctx.strokeStyle = P.dark; ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.moveTo(cx - 40, top + 2);
+    ctx.lineTo(cx - 40, top - 28);
+    ctx.lineTo(cx - 22, top - 14);
+    ctx.lineTo(cx, top - 34);
+    ctx.lineTo(cx + 22, top - 14);
+    ctx.lineTo(cx + 40, top - 28);
+    ctx.lineTo(cx + 40, top + 2);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+    // jewels
+    [cx - 28, cx, cx + 28].forEach((jx, i) => {
+      ctx.fillStyle = [P.primary, P.secondary, P.primary][i];
+      ctx.beginPath(); ctx.arc(jx, top - 8, 6, 0, Math.PI * 2); ctx.fill();
+    });
+  }
+}
+
+// ── ARM ──
+function drawGeoArm(ctx, x, y, angle, dark) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(angle);
+  ctx.fillStyle = ctx.fillStyle; // inherited
+  ctx.beginPath();
+  ctx.rect(-10, 0, 20, 50);
+  ctx.fill();
+  ctx.strokeStyle = dark; ctx.lineWidth = 2;
+  ctx.strokeRect(-10, 0, 20, 50);
+  // hand
+  ctx.beginPath();
+  ctx.ellipse(0, 54, 12, 10, 0, 0, Math.PI * 2);
+  ctx.fill(); ctx.stroke();
+  ctx.restore();
+}
+
+// ── STAR HELPER ──
+function drawStar(ctx, x, y, points, outerR, innerR) {
+  ctx.beginPath();
+  for (let i = 0; i < points * 2; i++) {
+    const r = i % 2 === 0 ? outerR : innerR;
+    const angle = (Math.PI / points) * i - Math.PI / 2;
+    i === 0 ? ctx.moveTo(x + r * Math.cos(angle), y + r * Math.sin(angle))
+            : ctx.lineTo(x + r * Math.cos(angle), y + r * Math.sin(angle));
+  }
+  ctx.closePath();
+}
+
+// ── RETRO FRAME / STICKERS ──
+function drawRetroFrame(ctx, W, H, P) {
+  // Border
+  ctx.strokeStyle = P.accent;
+  ctx.lineWidth = 4;
+  ctx.globalAlpha = 0.6;
+  ctx.strokeRect(4, 4, W - 8, H - 8);
+  ctx.globalAlpha = 1;
+
+  // Corner diamonds
+  const corners = [[8,8],[W-8,8],[8,H-8],[W-8,H-8]];
+  corners.forEach(([cx, cy]) => {
+    ctx.fillStyle = P.primary;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - 7); ctx.lineTo(cx + 7, cy);
+    ctx.lineTo(cx, cy + 7); ctx.lineTo(cx - 7, cy);
+    ctx.closePath(); ctx.fill();
+  });
+
+  // Random geometric mini stickers
+  const stickers = [
+    { x: 14, y: H - 24, shape: 'tri', color: P.primary },
+    { x: W - 14, y: H - 24, shape: 'sq', color: P.secondary },
+    { x: 16, y: 30, shape: 'dia', color: P.accent },
+  ];
+  stickers.forEach(s => {
+    ctx.fillStyle = s.color; ctx.globalAlpha = 0.8;
+    ctx.beginPath();
+    if (s.shape === 'tri') {
+      ctx.moveTo(s.x, s.y - 8); ctx.lineTo(s.x + 8, s.y + 6); ctx.lineTo(s.x - 8, s.y + 6); ctx.closePath();
+    } else if (s.shape === 'sq') {
+      ctx.rect(s.x - 7, s.y - 7, 14, 14);
+    } else {
+      ctx.moveTo(s.x, s.y - 9); ctx.lineTo(s.x + 9, s.y); ctx.lineTo(s.x, s.y + 9); ctx.lineTo(s.x - 9, s.y); ctx.closePath();
+    }
+    ctx.fill();
+  });
+  ctx.globalAlpha = 1;
+}
+</script>
+</body>
+</html>
